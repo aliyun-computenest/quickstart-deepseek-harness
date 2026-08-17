@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="计算巢是阿里云开放给企业应用服务商的服务管理平台。服务商能够在计算巢上发布私有化部署服务，为其客户提供云上软件一键部署的能力；同时也支持全托管模式的服务，赋能服务商托管其客户资源。">
+  <title>English - Aliyun 计算巢 x Demo</title>
+
+  <link rel="shortcut icon" href="../img/favicon.ico">
+
+  <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css">
+  <link rel="stylesheet" href="../css/theme.css">
+  
+
+  
+
+  
+  
+
+  
+    <script src="../search/main.js"></script>
+  
+
+  
+
+  <script src="../js/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="nav-inner">
+        <div class="logo">
+          <img src="./img/logo-2x.png">
+        </div>
+        <div class="nav-list">
+          <ul>
+          
+              <li><a href="#deepseek-harness-community-edition-computenest-deployment-guide">DeepSeek-Harness Community Edition ComputeNest Deployment Guide</a></li>
+              
+                  <li><a href="#service-overview">Service Overview</a></li>
+                  
+              
+                  <li><a href="#service-architecture">Service Architecture</a></li>
+                  
+              
+                  <li><a href="#billing">Billing</a></li>
+                  
+              
+                  <li><a href="#required-permissions-for-ram-users">Required Permissions for RAM Users</a></li>
+                  
+              
+                  <li><a href="#service-instance-deployment-workflow">Service Instance Deployment Workflow</a></li>
+                  
+                      <li class="li-h3"><a href="#deployment-steps">Deployment Steps</a></li>
+                  
+              
+                  <li><a href="#initial-configuration">Initial Configuration</a></li>
+                  
+                      <li class="li-h3"><a href="#1-configure-the-llm-model">1. Configure the LLM Model</a></li>
+                  
+                      <li class="li-h3"><a href="#2-select-a-workspace">2. Select a Workspace</a></li>
+                  
+              
+                  <li><a href="#operations-maintenance">Operations &amp; Maintenance</a></li>
+                  
+              
+                  <li><a href="#important-notes">Important Notes</a></li>
+                  
+              
+                  <li><a href="#official-links">Official Links</a></li>
+                  
+              
+          
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="content theme-github">
+      
+      <div class="content-inner">        
+        
+        <h1 id="deepseek-harness-community-edition-computenest-deployment-guide">DeepSeek-Harness Community Edition ComputeNest Deployment Guide</h1>
+<h2 id="service-overview">Service Overview</h2>
+<p>DeepSeek-Harness Community Edition is an Agent Harness open-sourced by DeepSeek AI. It provides a browser-based Web UI where users can configure DeepSeek or OpenAI-compatible models, select a workspace, and run code agent tasks. This ComputeNest service uses a single-ECS deployment and automatically installs Node.js, the DeepSeek Harness Web UI, and an Nginx reverse proxy.</p>
+<p>The service itself does not have a login interface. Therefore, access is gated by the ComputeNest Secure Proxy: users access the Web UI through the service instance output URL in the ComputeNest console. The ECS security group only allows traffic from the Secure Proxy egress CIDR ranges on port 3080 and does not expose an unauthenticated web service directly to the public internet.</p>
+<h2 id="service-architecture">Service Architecture</h2>
+<p>The service template provisions a single-ECS deployment. The DeepSeek Harness Web UI listens on <code>127.0.0.1:13080</code> internally. Nginx listens on <code>0.0.0.0:3080</code> and reverse-proxies to the local Web UI. The ComputeNest Secure Proxy accesses port 3080 via the service instance output address.</p>
+<p><img src="architecture_ecs_single.png" width="600" height="400" align="bottom"/></p>
+<h2 id="billing">Billing</h2>
+<p>Building a service from this template incurs no charges. When deploying a service instance, resource costs mainly include:</p>
+<ul>
+<li>ECS instance type</li>
+<li>System disk capacity</li>
+</ul>
+<p>Both pay-as-you-go and subscription billing methods are supported. Estimated costs are displayed in real time before deployment.</p>
+<h2 id="required-permissions-for-ram-users">Required Permissions for RAM Users</h2>
+<p>If you use a RAM user to create a service instance, you must grant the required permissions to the RAM user before creating the instance.</p>
+<table>
+<thead>
+<tr>
+<th>Policy Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AliyunECSFullAccess</td>
+<td>Full access to Elastic Compute Service (ECS)</td>
+</tr>
+<tr>
+<td>AliyunVPCFullAccess</td>
+<td>Full access to Virtual Private Cloud (VPC)</td>
+</tr>
+<tr>
+<td>AliyunROSFullAccess</td>
+<td>Full access to Resource Orchestration Service (ROS)</td>
+</tr>
+<tr>
+<td>AliyunComputeNestUserFullAccess</td>
+<td>Full access to ComputeNest user-side resources</td>
+</tr>
+</tbody>
+</table>
+<h2 id="service-instance-deployment-workflow">Service Instance Deployment Workflow</h2>
+<h3 id="deployment-steps">Deployment Steps</h3>
+<ol>
+<li>Open the ComputeNest service instance creation page. Select a region and fill in the instance type, instance password, and network parameters.</li>
+</ol>
+<p><a href="https://computenest.console.aliyun.com/service/instance/create/cn-hangzhou?type=user&amp;ServiceId=service-252a17b1e4cc425ca5f0">Deployment Link</a></p>
+<ol>
+<li>
+<p>After confirming the pricing details, click <strong>Next: Confirm Order</strong>. Accept the service agreement and click <strong>Create Now</strong>.</p>
+</li>
+<li>
+<p>Wait for the service instance deployment to complete. Once finished, check the <code>deepseek_harness_3080_url</code> value in the <strong>Outputs</strong> section of the service instance details page.</p>
+</li>
+<li>
+<p>Click the Secure Proxy URL in the outputs to open the Web UI. The page should display the DeepSeek Harness new session, settings, and workspace selection entry points.</p>
+</li>
+</ol>
+<p><img alt="DeepSeek Harness Web UI" src="../deploy-test-webproxy-deepseek-harness.png" />
+<img alt="set-model.png" src="../set-model.png" />
+<img alt="chat.png" src="../chat.png" /></p>
+<h2 id="initial-configuration">Initial Configuration</h2>
+<p>After opening the DeepSeek Harness Web UI, you cannot start a session immediately. You must first configure the model and workspace.</p>
+<h3 id="1-configure-the-llm-model">1. Configure the LLM Model</h3>
+<ol>
+<li>Click <strong>Settings</strong> in the lower-left corner.</li>
+<li>Go to <strong>Models</strong> configuration.</li>
+<li>Choose one of the following options to set up model access:</li>
+<li>Enter a DeepSeek API Key to use the official DeepSeek model.</li>
+<li>Add an OpenAI-compatible model provider by filling in the Provider ID, Base URL, API protocol, and API Key, and configure at least one model.</li>
+<li>Save the configuration.</li>
+</ol>
+<p>Without a configured model API Key, the Web UI can still be opened, but model requests will not work.</p>
+<h3 id="2-select-a-workspace">2. Select a Workspace</h3>
+<ol>
+<li>Return to the main page and click <strong>Select Workspace</strong>.</li>
+<li>Choose the workspace directory you want the agent to operate on.</li>
+<li>After selecting a workspace, the new session input box becomes functional.</li>
+</ol>
+<p>The service instance prepares <code>/opt/deepseek-harness/workspace</code> on the ECS as the default working directory. DeepSeek Harness session data, credentials, storage, and attachments are stored under <code>/opt/deepseek-harness/dsh-home</code>.</p>
+<h2 id="operations-maintenance">Operations &amp; Maintenance</h2>
+<p>To troubleshoot the service on the ECS, connect to the instance using the instance password and run:</p>
+<pre><code class="language-bash">sudo systemctl status deepseek-harness.service
+sudo systemctl status nginx.service
+sudo journalctl -u deepseek-harness.service -n 100 --no-pager
+</code></pre>
+<p>The service startup script is located at <code>/opt/deepseek-harness/bin/start-dsh-web</code>, and application logs are at <code>/opt/deepseek-harness/logs/service.log</code>.</p>
+<h2 id="important-notes">Important Notes</h2>
+<ul>
+<li>DeepSeek Harness is currently in developer preview. Future upstream versions may introduce breaking changes.</li>
+<li>Model API Keys configured in the Web UI are stored in the service instance's local persistent directory. Please manage instance access permissions carefully.</li>
+</ul>
+<h2 id="official-links">Official Links</h2>
+<ul>
+<li><a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness GitHub</a></li>
+</ul>
+        
+      </div>
+
+      <div class="copyrights">© 2009-2022 Aliyun.com 版权所有</div>
+    </div>
+  </div>
+  
+  <!--
+  MkDocs version      : 1.6.1
+  Docs Build Date UTC : 2026-08-17 02:52:45.645924+00:00
+  -->
+</body>
+</html>

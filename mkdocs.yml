@@ -1,3 +1,6 @@
 site_name: Aliyun 计算巢 x Demo
 theme: 
   name: aliyuncomputenest
+nav:
+  - 中文: index_ecs_single.md
+  - English: index_ecs_single_en.md

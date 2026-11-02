@@ -2,9 +2,9 @@
 
 ## 服务说明
 
-Deepseek-Harness社区版是 DeepSeek AI 开源的 Agent Harness，提供浏览器 Web UI，可在页面中配置 DeepSeek 或 OpenAI 兼容模型，并选择工作区后运行代码代理任务。本计算巢服务采用单机 ECS 部署，自动安装 Node.js、DeepSeek Harness Web UI 和 Nginx 反向代理。
+Deepseek-Harness社区版是 DeepSeek AI 开源的 Agent Harness，提供浏览器 Web UI，可在页面中配置 DeepSeek 或 OpenAI 兼容模型，并选择工作区后运行代码代理任务。本计算巢服务采用单机 ECS 部署，ECS 镜像内已预置 Node.js 24.22.2、DeepSeek Harness（0.2.1-rc.5）Web UI 和 Nginx 反向代理。
 
-该服务本身没有登录界面，因此访问入口已开启计算巢安全代理：用户从计算巢控制台的服务实例输出访问 Web UI，ECS 安全组仅放行安全代理出口网段访问 3080 端口，不直接对公网开放无鉴权 Web 服务。
+该服务本身没有登录界面，因此访问入口已开启计算巢安全代理：用户从计算巢控制台的服务实例输出访问 Web UI，ECS 安全组仅放行安全代理出口网段访问 3080 端口，不直接对公网开放无鉴权 Web 服务。DeepSeek Harness 0.2.x 启动时会生成一次性访问 token，Nginx 在首次访问时自动用它换取签名 Cookie 并跳转，用户无需手动输入 token。
 
 ## 服务架构
 
@@ -42,13 +42,11 @@ Deepseek-Harness社区版是 DeepSeek AI 开源的 Agent Harness，提供浏览�
 
 2. 确认询价明细后点击 **下一步：确认订单**，同意服务协议并点击 **立即创建**。
 
-3. 等待服务实例部署完成。部署完成后，在服务实例详情页的 **输出** 区域查看 `deepseek_harness_3080_url`。
+3. 等待服务实例部署完成。部署完成后，在服务实例详情页的 **输出** 区域查看 `WebUIAddress`。
 
 4. 点击输出中的安全代理访问地址打开 Web UI。页面应展示 DeepSeek Harness 的新会话、设置和选择工作区入口。
 
 ![Deepseek Harness Web UI](deploy-test-webproxy-deepseek-harness.png)
-![set-model.png](set-model.png)
-![chat.png](chat.png)
 
 ## 首次使用配置
 
@@ -56,22 +54,31 @@ Deepseek Harness Web UI 打开后还不能直接发起会话，必须先完成�
 
 ### 1. 配置大模型
 
-1. 点击左下角 **设置**。
-2. 进入 **Models / 模型** 配置。
-3. 二选一完成模型接入：
+首次打开会弹出 **开始使用** 引导，点击 **添加 API Key** 可直接进入模型配置；也可以点击左下角 **更多 → 设置 → 模型**。
+
+![配置模型](set-model.png)
+
+1. 在 **模型** 页签中，页面会列出 DeepSeek 提供方（`deepseek-official`）与「添加模型提供商」入口。
+2. 任选一种方式完成模型接入：
    - 填写 DeepSeek API Key，使用 DeepSeek 官方模型。
-   - 添加 OpenAI 兼容模型提供方，填写 Provider ID、Base URL、API 协议、API Key，并至少配置一个模型。
-4. 保存配置。
+   - 点击 **添加模型提供商 → 第三方模型提供商**，从内置目录（OpenAI、Anthropic、Kimi、Qwen 等）中选择并填写 API Key。
+   - 点击 **添加模型提供商 → 自定义模型 API**，填写 Base URL、API Key 与模型 ID。
+3. 点击 **保存** 完成配置。
 
 未配置模型 API Key 时，Web UI 可以打开，但无法正常发起模型请求。
 
 ### 2. 选择工作区
 
 1. 返回主页面，点击 **选择工作区**。
-2. 选择需要让 Agent 操作的工作区目录。
+2. 在目录选择器中进入 **workspace**，点击 **打开**。
+
+![选择工作区](workspace.png)
+
 3. 工作区选择完成后，新会话输入框才可正常使用。
 
-服务实例已在 ECS 上准备 `/opt/deepseek-harness/workspace` 作为默认工作目录，DeepSeek Harness 的会话、凭据、存储和附件数据保存在 `/opt/deepseek-harness/dsh-home` 下。
+![开始会话](chat.png)
+
+服务实例已在 ECS 上准备 `/opt/deepseek-harness/workspace` 作为默认工作目录，并在主目录下提供同名入口供目录选择器直接选取；DeepSeek Harness 的会话、凭据、存储和附件数据保存在 `/opt/deepseek-harness/dsh-home` 下。
 
 ## 运维说明
 

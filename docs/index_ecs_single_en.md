@@ -2,9 +2,9 @@
 
 ## Service Overview
 
-DeepSeek-Harness Community Edition is an Agent Harness open-sourced by DeepSeek AI. It provides a browser-based Web UI where users can configure DeepSeek or OpenAI-compatible models, select a workspace, and run code agent tasks. This ComputeNest service uses a single-ECS deployment and automatically installs Node.js, the DeepSeek Harness Web UI, and an Nginx reverse proxy.
+DeepSeek-Harness Community Edition is an Agent Harness open-sourced by DeepSeek AI. It provides a browser-based Web UI where users can configure DeepSeek or OpenAI-compatible models, select a workspace, and run code agent tasks. This ComputeNest service uses a single-ECS deployment, and the ECS image already ships with Node.js 24.22.2, the DeepSeek Harness (0.2.1-rc.5) Web UI, and an Nginx reverse proxy.
 
-The service itself does not have a login interface. Therefore, access is gated by the ComputeNest Secure Proxy: users access the Web UI through the service instance output URL in the ComputeNest console. The ECS security group only allows traffic from the Secure Proxy egress CIDR ranges on port 3080 and does not expose an unauthenticated web service directly to the public internet.
+The service itself does not have a login interface. Therefore, access is gated by the ComputeNest Secure Proxy: users access the Web UI through the service instance output URL in the ComputeNest console. The ECS security group only allows traffic from the Secure Proxy egress CIDR ranges on port 3080 and does not expose an unauthenticated web service directly to the public internet. DeepSeek Harness 0.2.x generates a one-time access token at startup; Nginx exchanges it for a signed cookie on the first request and redirects, so users never need to enter the token manually.
 
 ## Service Architecture
 
@@ -42,13 +42,11 @@ If you use a RAM user to create a service instance, you must grant the required 
 
 2. After confirming the pricing details, click **Next: Confirm Order**. Accept the service agreement and click **Create Now**.
 
-3. Wait for the service instance deployment to complete. Once finished, check the `deepseek_harness_3080_url` value in the **Outputs** section of the service instance details page.
+3. Wait for the service instance deployment to complete. Once finished, check the `WebUIAddress` value in the **Outputs** section of the service instance details page.
 
 4. Click the Secure Proxy URL in the outputs to open the Web UI. The page should display the DeepSeek Harness new session, settings, and workspace selection entry points.
 
 ![DeepSeek Harness Web UI](deploy-test-webproxy-deepseek-harness.png)
-![set-model.png](set-model.png)
-![chat.png](chat.png)
 
 ## Initial Configuration
 
@@ -56,22 +54,31 @@ After opening the DeepSeek Harness Web UI, you cannot start a session immediatel
 
 ### 1. Configure the LLM Model
 
-1. Click **Settings** in the lower-left corner.
-2. Go to **Models** configuration.
-3. Choose one of the following options to set up model access:
+The first visit shows a **Getting started** guide; click **Add API Key** to go straight to model configuration, or open **More → Settings → Models** from the lower-left corner.
+
+![Configure Model](set-model.png)
+
+1. On the **Models** tab, the page lists the DeepSeek provider (`deepseek-official`) and an **Add model provider** entry.
+2. Pick one of the following to set up model access:
    - Enter a DeepSeek API Key to use the official DeepSeek model.
-   - Add an OpenAI-compatible model provider by filling in the Provider ID, Base URL, API protocol, and API Key, and configure at least one model.
-4. Save the configuration.
+   - Click **Add model provider → Third-party model provider** and choose from the built-in catalog (OpenAI, Anthropic, Kimi, Qwen, and others), then enter the API Key.
+   - Click **Add model provider → Custom model API** and fill in the Base URL, API Key, and model ID.
+3. Click **Save** to finish.
 
 Without a configured model API Key, the Web UI can still be opened, but model requests will not work.
 
 ### 2. Select a Workspace
 
-1. Return to the main page and click **Select Workspace**.
-2. Choose the workspace directory you want the agent to operate on.
-3. After selecting a workspace, the new session input box becomes functional.
+1. Return to the main page and click **Select workspace**.
+2. In the directory picker, enter **workspace** and click **Open**.
 
-The service instance prepares `/opt/deepseek-harness/workspace` on the ECS as the default working directory. DeepSeek Harness session data, credentials, storage, and attachments are stored under `/opt/deepseek-harness/dsh-home`.
+![Select Workspace](workspace.png)
+
+3. Once a workspace is selected, the new session input box becomes functional.
+
+![Start a Session](chat.png)
+
+The service instance prepares `/opt/deepseek-harness/workspace` on the ECS as the default working directory and exposes it with the same name under the home directory so the directory picker can select it directly. DeepSeek Harness session data, credentials, storage, and attachments are stored under `/opt/deepseek-harness/dsh-home`.
 
 ## Operations & Maintenance
 

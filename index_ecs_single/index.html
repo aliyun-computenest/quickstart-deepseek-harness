@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="计算巢是阿里云开放给企业应用服务商的服务管理平台。服务商能够在计算巢上发布私有化部署服务，为其客户提供云上软件一键部署的能力；同时也支持全托管模式的服务，赋能服务商托管其客户资源。">
+  <title>中文 - Aliyun 计算巢 x Deepseek-Harness社区版</title>
+
+  <link rel="shortcut icon" href="../img/favicon.ico">
+
+  <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css">
+  <link rel="stylesheet" href="../css/theme.css">
+  
+
+  
+
+  
+  
+
+  
+    <script src="../search/main.js"></script>
+  
+
+  
+
+  <script src="../js/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="nav-inner">
+        <div class="logo">
+          <img src="./img/logo-2x.png">
+        </div>
+        <div class="nav-list">
+          <ul>
+          
+              <li><a href="#deepseek-harness">Deepseek-Harness社区版计算巢部署文档</a></li>
+              
+                  <li><a href="#_1">服务说明</a></li>
+                  
+              
+                  <li><a href="#_2">服务实例部署流程</a></li>
+                  
+                      <li class="li-h3"><a href="#_3">部署步骤</a></li>
+                  
+              
+                  <li><a href="#_4">首次使用配置</a></li>
+                  
+                      <li class="li-h3"><a href="#1">1. 配置大模型</a></li>
+                  
+                      <li class="li-h3"><a href="#2">2. 选择工作区</a></li>
+                  
+                      <li class="li-h3"><a href="#3">3. 开始会话</a></li>
+                  
+              
+                  <li><a href="#_5">运维说明</a></li>
+                  
+              
+                  <li><a href="#_6">注意事项</a></li>
+                  
+              
+                  <li><a href="#_7">官方链接</a></li>
+                  
+              
+          
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="content theme-github">
+      
+      <div class="content-inner">        
+        
+        <h1 id="deepseek-harness">Deepseek-Harness社区版计算巢部署文档</h1>
+<h2 id="_1">服务说明</h2>
+<p>Deepseek-Harness社区版是 DeepSeek AI 开源的 Agent Harness，提供浏览器 Web UI，可在页面中配置 DeepSeek 或 OpenAI 兼容模型，并选择工作区后运行代码代理任务。</p>
+<p>当前版本为 <strong>DeepSeek Harness 0.2.1-rc.5</strong>。相较于此前的 0.1.0-rc.6，主要功能与使用体验变化如下：</p>
+<table>
+<thead>
+<tr>
+<th>功能</th>
+<th>更新内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>模型配置</td>
+<td>自定义模型 API 支持在页面中设置各模型的推理等级；可配置输入类型、上下文窗口与最大输出 token 数，具体能力取决于所用模型。</td>
+</tr>
+<tr>
+<td>自动化任务</td>
+<td>自动化任务成为 Web 内置能力；提醒工具在标准、创造和 PTC 模式中可用，在极简模式和子代理中不可用。</td>
+</tr>
+<tr>
+<td>插件管理</td>
+<td>支持通过自定义插件索引源发现和安装插件；新增「让 Agent 创建插件」入口，发送需求后开始执行。</td>
+</tr>
+<tr>
+<td>长对话与草稿</td>
+<td>可用 <code>/compact</code> 指令手动压缩上下文；恢复草稿或切换工作区时保留文件、目录和会话引用。</td>
+</tr>
+<tr>
+<td>消息展示</td>
+<td>已发送消息中的密钥和令牌默认脱敏、按需查看；0.2.1-rc.5 优化了对话中思考内容的展示。</td>
+</tr>
+<tr>
+<td>实验性扩展</td>
+<td>提供 Git Worktrees、思考过程机器翻译和开发者工具插件，需在插件页按需安装或启用，不代表默认已开启。</td>
+</tr>
+</tbody>
+</table>
+<p>Git Worktrees 插件可让 Agent 创建并进入独立的 Git checkout；思考过程翻译可选择 Bing、Google 或付费 DeepSeek Flash；开发者工具提供会话原始日志和调试入口。实验性功能可能随版本调整，使用前请查看对应插件说明。</p>
+<p>详细变更见 <a href="https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.2.1-rc.1">0.2.1-rc.1 累积更新说明</a>与 <a href="https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.2.1-rc.5">0.2.1-rc.5 发布说明</a>。</p>
+<h2 id="_2">服务实例部署流程</h2>
+<h3 id="_3">部署步骤</h3>
+<ol>
+<li>打开计算巢服务实例创建页面，选择部署地域并填写实例规格、实例密码和网络参数。</li>
+</ol>
+<p><a href="https://computenest.console.aliyun.com/service/instance/create/cn-hangzhou?type=user&amp;ServiceId=service-252a17b1e4cc425ca5f0">部署链接</a></p>
+<ol>
+<li>
+<p>确认询价明细后点击 <strong>下一步：确认订单</strong>，同意服务协议并点击 <strong>立即创建</strong>。</p>
+</li>
+<li>
+<p>等待服务实例部署完成。部署完成后，在服务实例详情页的 <strong>输出</strong> 区域查看 <code>WebUIAddress</code>。</p>
+</li>
+<li>
+<p>点击输出中的安全代理访问地址打开 Web UI。页面应展示 DeepSeek Harness 的新会话、设置和选择工作区入口。</p>
+</li>
+</ol>
+<p><img alt="Deepseek Harness Web UI" src="../deploy-test-webproxy-deepseek-harness.png" /></p>
+<h2 id="_4">首次使用配置</h2>
+<p>Deepseek Harness Web UI 打开后还不能直接发起会话，必须先完成模型和工作区配置。</p>
+<h3 id="1">1. 配置大模型</h3>
+<p>首次打开会弹出 <strong>开始使用</strong> 引导，点击 <strong>添加 API Key</strong> 可直接进入模型配置；也可以点击左下角 <strong>更多 → 设置 → 模型</strong>。</p>
+<p><img alt="配置模型" src="../set-model.png" /></p>
+<ol>
+<li>在 <strong>模型</strong> 页签中，页面会列出 DeepSeek 提供方（<code>deepseek-official</code>）与「添加模型提供商」入口。</li>
+<li>任选一种方式完成模型接入：</li>
+<li>填写 DeepSeek API Key，使用 DeepSeek 官方模型。</li>
+<li>点击 <strong>添加模型提供商 → 第三方模型提供商</strong>，从内置目录（OpenAI、Anthropic、Kimi、Qwen 等）中选择并填写 API Key。</li>
+<li>点击 <strong>添加模型提供商 → 自定义模型 API</strong>，填写 Base URL、API Key 与模型 ID。</li>
+<li>新增提供商时点击 <strong>创建</strong>，编辑已有提供商时点击 <strong>保存</strong> 完成配置。</li>
+</ol>
+<p>未配置模型 API Key 时，Web UI 可以打开，但无法正常发起模型请求。</p>
+<h4 id="qwen-plus">示例：接入阿里云百炼 qwen-plus</h4>
+<ol>
+<li>在 <strong>设置 → 模型</strong> 中点击 <strong>添加模型提供商 → 自定义模型 API</strong>。</li>
+<li>
+<p>填写以下配置。API Key 请使用您在百炼控制台申请的密钥，不要将密钥写入对话或公开文件。</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Provider ID</td>
+<td><code>bailian</code></td>
+</tr>
+<tr>
+<td>显示名称</td>
+<td><code>阿里云百炼</code></td>
+</tr>
+<tr>
+<td>API 地址</td>
+<td><code>https://dashscope.aliyuncs.com/compatible-mode/v1</code></td>
+</tr>
+<tr>
+<td>API 协议</td>
+<td><code>OpenAI Chat Completions</code></td>
+</tr>
+<tr>
+<td>API 密钥</td>
+<td>您自己的百炼 API Key</td>
+</tr>
+<tr>
+<td>模型 ID</td>
+<td><code>qwen-plus</code></td>
+</tr>
+<tr>
+<td>模型显示名称</td>
+<td><code>Qwen Plus</code></td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>添加上述模型后点击 <strong>创建</strong>；修改已有提供商时点击 <strong>保存</strong>。</p>
+</li>
+<li>完成工作区选择后，在会话输入框的模型选择器中选择 <strong>Qwen Plus</strong>。</li>
+</ol>
+<p>该示例使用百炼中国内地兼容接口，请使用对应地域的 API Key。其他地域或网关请以提供商文档中的 API 地址和协议为准。保存配置或检测到凭据不代表模型调用已成功，需通过实际对话确认。</p>
+<h3 id="2">2. 选择工作区</h3>
+<ol>
+<li>返回主页面，点击 <strong>选择工作区</strong>。</li>
+<li>在目录选择器中进入 <strong>workspace</strong>，点击 <strong>打开</strong>。</li>
+</ol>
+<p><img alt="选择工作区" src="../workspace.png" /></p>
+<ol>
+<li>工作区选择完成后，新会话输入框才可正常使用。</li>
+</ol>
+<p><img alt="开始会话" src="../chat.png" /></p>
+<p>服务实例已在 ECS 上准备 <code>/opt/deepseek-harness/workspace</code> 作为默认工作目录，并在主目录下提供同名入口供目录选择器直接选取；DeepSeek Harness 的会话、凭据、存储和附件数据保存在 <code>/opt/deepseek-harness/dsh-home</code> 下。</p>
+<h3 id="3">3. 开始会话</h3>
+<ol>
+<li>确认工作区已选择，并在模型选择器中选择已配置的模型。</li>
+<li>输入任务并发送，例如：<code>请概述当前工作区的目录结构，不要修改文件。</code></li>
+<li>等待模型回复。只有收到实际回复，才说明模型鉴权和调用成功；若请求失败，请核对 API Key、API 地址、协议、模型 ID 及实例出网连接。</li>
+</ol>
+<p>长对话需要压缩上下文时，可在输入框使用 <code>/compact</code> 指令。</p>
+<h2 id="_5">运维说明</h2>
+<p>如需登录 ECS 排查服务状态，可使用实例密码远程连接 ECS 后执行：</p>
+<pre><code class="language-bash">sudo systemctl status deepseek-harness.service
+sudo systemctl status nginx.service
+sudo journalctl -u deepseek-harness.service -n 100 --no-pager
+</code></pre>
+<p>服务启动脚本位于 <code>/opt/deepseek-harness/bin/start-dsh-web</code>，应用日志位于 <code>/opt/deepseek-harness/logs/service.log</code>。</p>
+<h2 id="_6">注意事项</h2>
+<ul>
+<li>DeepSeek Harness 当前为 developer preview，上游未来版本可能存在破坏性变更。</li>
+<li>用户在 Web UI 中配置的模型 API Key 会保存在服务实例本地持久化目录中，请妥善管理实例访问权限。</li>
+</ul>
+<h2 id="_7">官方链接</h2>
+<ul>
+<li><a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness GitHub</a></li>
+</ul>
+        
+      </div>
+
+      <div class="copyrights">© 2009-2022 Aliyun.com 版权所有</div>
+    </div>
+  </div>
+  
+  <!--
+  MkDocs version      : 1.6.1
+  Docs Build Date UTC : 2026-11-03 07:12:16.768665+00:00
+  -->
+</body>
+</html>

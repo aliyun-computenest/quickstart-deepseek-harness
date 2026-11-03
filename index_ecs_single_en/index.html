@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="计算巢是阿里云开放给企业应用服务商的服务管理平台。服务商能够在计算巢上发布私有化部署服务，为其客户提供云上软件一键部署的能力；同时也支持全托管模式的服务，赋能服务商托管其客户资源。">
+  <title>English - Aliyun 计算巢 x Deepseek-Harness社区版</title>
+
+  <link rel="shortcut icon" href="../img/favicon.ico">
+
+  <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css">
+  <link rel="stylesheet" href="../css/theme.css">
+  
+
+  
+
+  
+  
+
+  
+    <script src="../search/main.js"></script>
+  
+
+  
+
+  <script src="../js/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="nav-inner">
+        <div class="logo">
+          <img src="./img/logo-2x.png">
+        </div>
+        <div class="nav-list">
+          <ul>
+          
+              <li><a href="#deepseek-harness-community-edition-computenest-deployment-guide">DeepSeek-Harness Community Edition ComputeNest Deployment Guide</a></li>
+              
+                  <li><a href="#service-overview">Service Overview</a></li>
+                  
+              
+                  <li><a href="#service-instance-deployment-workflow">Service Instance Deployment Workflow</a></li>
+                  
+                      <li class="li-h3"><a href="#deployment-steps">Deployment Steps</a></li>
+                  
+              
+                  <li><a href="#initial-configuration">Initial Configuration</a></li>
+                  
+                      <li class="li-h3"><a href="#1-configure-the-llm-model">1. Configure the LLM Model</a></li>
+                  
+                      <li class="li-h3"><a href="#2-select-a-workspace">2. Select a Workspace</a></li>
+                  
+                      <li class="li-h3"><a href="#3-start-a-conversation">3. Start a Conversation</a></li>
+                  
+              
+                  <li><a href="#operations-maintenance">Operations &amp; Maintenance</a></li>
+                  
+              
+                  <li><a href="#important-notes">Important Notes</a></li>
+                  
+              
+                  <li><a href="#official-links">Official Links</a></li>
+                  
+              
+          
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="content theme-github">
+      
+      <div class="content-inner">        
+        
+        <h1 id="deepseek-harness-community-edition-computenest-deployment-guide">DeepSeek-Harness Community Edition ComputeNest Deployment Guide</h1>
+<h2 id="service-overview">Service Overview</h2>
+<p>DeepSeek-Harness Community Edition is an Agent Harness open-sourced by DeepSeek AI. It provides a browser-based Web UI where users can configure DeepSeek or OpenAI-compatible models, select a workspace, and run code agent tasks.</p>
+<p>The current version is <strong>DeepSeek Harness 0.2.1-rc.5</strong>. Compared with the previous 0.1.0-rc.6 version, the main feature and usability changes are:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Updates</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Model configuration</td>
+<td>Custom model APIs support per-model reasoning levels in the UI. Input types, context windows, and maximum output tokens are configurable; actual capabilities depend on the model.</td>
+</tr>
+<tr>
+<td>Automation</td>
+<td>Automation tasks are built into the Web UI. Reminder tools are available in Standard, Creator, and PTC modes, but not in Minimal mode or subagents.</td>
+</tr>
+<tr>
+<td>Plugin management</td>
+<td>Discover and install plugins from custom plugin index sources. The new "Let Agent create a plugin" entry starts work after you send a request.</td>
+</tr>
+<tr>
+<td>Long conversations and drafts</td>
+<td>Use <code>/compact</code> to compress context manually. Restoring drafts or switching workspaces preserves file, folder, and session references.</td>
+</tr>
+<tr>
+<td>Message display</td>
+<td>Keys and tokens in sent messages are masked by default and can be revealed on demand. Version 0.2.1-rc.5 improves the display of thinking content.</td>
+</tr>
+<tr>
+<td>Experimental extensions</td>
+<td>Git Worktrees, reasoning translation, and Developer Tools plugins are available for on-demand installation or enablement on the Plugins page; they are not necessarily enabled by default.</td>
+</tr>
+</tbody>
+</table>
+<p>The Git Worktrees plugin lets the agent create and enter an independent Git checkout. Reasoning translation supports Bing, Google, or paid DeepSeek Flash. Developer Tools provides raw session logs and debugging tools. Experimental features may change between versions; read the corresponding plugin documentation before use.</p>
+<p>See the <a href="https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.2.1-rc.1">0.2.1-rc.1 cumulative release notes</a> and <a href="https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.2.1-rc.5">0.2.1-rc.5 release notes</a> for details.</p>
+<h2 id="service-instance-deployment-workflow">Service Instance Deployment Workflow</h2>
+<h3 id="deployment-steps">Deployment Steps</h3>
+<ol>
+<li>Open the ComputeNest service instance creation page. Select a region and fill in the instance type, instance password, and network parameters.</li>
+</ol>
+<p><a href="https://computenest.console.aliyun.com/service/instance/create/cn-hangzhou?type=user&amp;ServiceId=service-252a17b1e4cc425ca5f0">Deployment Link</a></p>
+<ol>
+<li>
+<p>After confirming the pricing details, click <strong>Next: Confirm Order</strong>. Accept the service agreement and click <strong>Create Now</strong>.</p>
+</li>
+<li>
+<p>Wait for the service instance deployment to complete. Once finished, check the <code>WebUIAddress</code> value in the <strong>Outputs</strong> section of the service instance details page.</p>
+</li>
+<li>
+<p>Click the Secure Proxy URL in the outputs to open the Web UI. The page should display the DeepSeek Harness new session, settings, and workspace selection entry points.</p>
+</li>
+</ol>
+<p><img alt="DeepSeek Harness Web UI" src="../deploy-test-webproxy-deepseek-harness.png" /></p>
+<h2 id="initial-configuration">Initial Configuration</h2>
+<p>After opening the DeepSeek Harness Web UI, you cannot start a session immediately. You must first configure the model and workspace.</p>
+<h3 id="1-configure-the-llm-model">1. Configure the LLM Model</h3>
+<p>The first visit shows a <strong>Getting started</strong> guide; click <strong>Add API Key</strong> to go straight to model configuration, or open <strong>More → Settings → Models</strong> from the lower-left corner.</p>
+<p><img alt="Configure Model" src="../set-model.png" /></p>
+<ol>
+<li>On the <strong>Models</strong> tab, the page lists the DeepSeek provider (<code>deepseek-official</code>) and an <strong>Add model provider</strong> entry.</li>
+<li>Pick one of the following to set up model access:</li>
+<li>Enter a DeepSeek API Key to use the official DeepSeek model.</li>
+<li>Click <strong>Add model provider → Third-party model provider</strong> and choose from the built-in catalog (OpenAI, Anthropic, Kimi, Qwen, and others), then enter the API Key.</li>
+<li>Click <strong>Add model provider → Custom model API</strong> and fill in the Base URL, API Key, and model ID.</li>
+<li>Click <strong>Create</strong> for a new provider or <strong>Save</strong> when editing an existing provider.</li>
+</ol>
+<p>Without a configured model API Key, the Web UI can still be opened, but model requests will not work.</p>
+<h4 id="example-connect-alibaba-cloud-bailian-qwen-plus">Example: Connect Alibaba Cloud Bailian qwen-plus</h4>
+<ol>
+<li>Open <strong>Settings → Models → Add model provider → Custom model API</strong>.</li>
+<li>
+<p>Enter the following settings. Use an API key obtained from the Bailian console; do not put the key in conversations or public files.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Provider ID</td>
+<td><code>bailian</code></td>
+</tr>
+<tr>
+<td>Display name</td>
+<td><code>阿里云百炼</code></td>
+</tr>
+<tr>
+<td>API address</td>
+<td><code>https://dashscope.aliyuncs.com/compatible-mode/v1</code></td>
+</tr>
+<tr>
+<td>API protocol</td>
+<td><code>OpenAI Chat Completions</code></td>
+</tr>
+<tr>
+<td>API key</td>
+<td>Your own Bailian API key</td>
+</tr>
+<tr>
+<td>Model ID</td>
+<td><code>qwen-plus</code></td>
+</tr>
+<tr>
+<td>Model display name</td>
+<td><code>Qwen Plus</code></td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>Add the model and click <strong>Create</strong>. When editing an existing provider, click <strong>Save</strong>.</p>
+</li>
+<li>After selecting a workspace, choose <strong>Qwen Plus</strong> in the conversation's model selector.</li>
+</ol>
+<p>This example uses the Bailian compatible endpoint in the Chinese mainland; use an API key for that region. For other regions or gateways, follow the provider's documented API address and protocol. Saving settings or detecting credentials does not prove that model calls work; verify with an actual conversation.</p>
+<h3 id="2-select-a-workspace">2. Select a Workspace</h3>
+<ol>
+<li>Return to the main page and click <strong>Select workspace</strong>.</li>
+<li>In the directory picker, enter <strong>workspace</strong> and click <strong>Open</strong>.</li>
+</ol>
+<p><img alt="Select Workspace" src="../workspace.png" /></p>
+<ol>
+<li>Once a workspace is selected, the new session input box becomes functional.</li>
+</ol>
+<p><img alt="Start a Session" src="../chat.png" /></p>
+<p>The service instance prepares <code>/opt/deepseek-harness/workspace</code> on the ECS as the default working directory and exposes it with the same name under the home directory so the directory picker can select it directly. DeepSeek Harness session data, credentials, storage, and attachments are stored under <code>/opt/deepseek-harness/dsh-home</code>.</p>
+<h3 id="3-start-a-conversation">3. Start a Conversation</h3>
+<ol>
+<li>Confirm that a workspace is selected and choose a configured model in the model selector.</li>
+<li>Send a task, such as: <code>Summarize the directory structure of the current workspace. Do not modify any files.</code></li>
+<li>Wait for an actual model response to confirm successful authentication and invocation. If the request fails, check the API key, API address, protocol, model ID, and the instance's outbound connectivity.</li>
+</ol>
+<p>Use <code>/compact</code> in the composer when you need to compress a long conversation's context.</p>
+<h2 id="operations-maintenance">Operations &amp; Maintenance</h2>
+<p>To troubleshoot the service on the ECS, connect to the instance using the instance password and run:</p>
+<pre><code class="language-bash">sudo systemctl status deepseek-harness.service
+sudo systemctl status nginx.service
+sudo journalctl -u deepseek-harness.service -n 100 --no-pager
+</code></pre>
+<p>The service startup script is located at <code>/opt/deepseek-harness/bin/start-dsh-web</code>, and application logs are at <code>/opt/deepseek-harness/logs/service.log</code>.</p>
+<h2 id="important-notes">Important Notes</h2>
+<ul>
+<li>DeepSeek Harness is currently in developer preview. Future upstream versions may introduce breaking changes.</li>
+<li>Model API Keys configured in the Web UI are stored in the service instance's local persistent directory. Please manage instance access permissions carefully.</li>
+</ul>
+<h2 id="official-links">Official Links</h2>
+<ul>
+<li><a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness GitHub</a></li>
+</ul>
+        
+      </div>
+
+      <div class="copyrights">© 2009-2022 Aliyun.com 版权所有</div>
+    </div>
+  </div>
+  
+  <!--
+  MkDocs version      : 1.6.1
+  Docs Build Date UTC : 2026-11-03 07:12:16.770630+00:00
+  -->
+</body>
+</html>

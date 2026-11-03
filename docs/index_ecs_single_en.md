@@ -4,13 +4,28 @@
 
 DeepSeek-Harness Community Edition is an Agent Harness open-sourced by DeepSeek AI. It provides a browser-based Web UI where users can configure DeepSeek or OpenAI-compatible models, select a workspace, and run code agent tasks. This ComputeNest service uses a single-ECS deployment, and the ECS image already ships with Node.js 24.22.2, the DeepSeek Harness (0.2.1-rc.5) Web UI, and an Nginx reverse proxy.
 
-The service itself does not have a login interface. Therefore, access is gated by the ComputeNest Secure Proxy: users access the Web UI through the service instance output URL in the ComputeNest console. The ECS security group only allows traffic from the Secure Proxy egress CIDR ranges on port 3080 and does not expose an unauthenticated web service directly to the public internet. DeepSeek Harness 0.2.x generates a one-time access token at startup; Nginx exchanges it for a signed cookie on the first request and redirects, so users never need to enter the token manually.
+Open the Web UI through the Secure Proxy entry on the service instance details page in the ComputeNest console. Do not access the private output address directly or expose port 3080 to the public internet.
+
+## Version Updates
+
+The deployed version is **DeepSeek Harness 0.2.1-rc.5**. Compared with the previous 0.1.0-rc.6 version, the main feature and usability changes are:
+
+| Feature | Updates |
+| --- | --- |
+| Model configuration | Custom model APIs support per-model reasoning levels in the UI. Input types, context windows, and maximum output tokens are configurable; actual capabilities depend on the model. |
+| Automation | Automation tasks are built into the Web UI. Reminder tools are available in Standard, Creator, and PTC modes, but not in Minimal mode or subagents. |
+| Plugin management | Discover and install plugins from custom plugin index sources. The new "Let Agent create a plugin" entry starts work after you send a request. |
+| Long conversations and drafts | Use `/compact` to compress context manually. Restoring drafts or switching workspaces preserves file, folder, and session references. |
+| Message display | Keys and tokens in sent messages are masked by default and can be revealed on demand. Version 0.2.1-rc.5 improves the display of thinking content. |
+| Experimental extensions | Git Worktrees, reasoning translation, and Developer Tools plugins are available for on-demand installation or enablement on the Plugins page; they are not necessarily enabled by default. |
+
+The Git Worktrees plugin lets the agent create and enter an independent Git checkout. Reasoning translation supports Bing, Google, or paid DeepSeek Flash. Developer Tools provides raw session logs and debugging tools. Experimental features may change between versions; read the corresponding plugin documentation before use.
+
+See the [0.2.1-rc.1 cumulative release notes](https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.2.1-rc.1) and [0.2.1-rc.5 release notes](https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.2.1-rc.5) for details.
 
 ## Service Architecture
 
 The service template provisions a single-ECS deployment. The DeepSeek Harness Web UI listens on `127.0.0.1:13080` internally. Nginx listens on `0.0.0.0:3080` and reverse-proxies to the local Web UI. The ComputeNest Secure Proxy accesses port 3080 via the service instance output address.
-
-The Secure Proxy only exposes the HTTPS 8443 gateway, so Nginx disables absolute redirects (`absolute_redirect off`): the first 302 stays on the relative path `/?token=...`, and the token-to-signed-cookie exchange completes inside the proxy gateway. Port 3080 on the instance is not reachable from the internet, so always open the Web UI through the Secure Proxy URL in the console outputs.
 
 <img src="architecture_ecs_single.png" width="600" height="400" align="bottom"/>
 
@@ -65,9 +80,29 @@ The first visit shows a **Getting started** guide; click **Add API Key** to go s
    - Enter a DeepSeek API Key to use the official DeepSeek model.
    - Click **Add model provider → Third-party model provider** and choose from the built-in catalog (OpenAI, Anthropic, Kimi, Qwen, and others), then enter the API Key.
    - Click **Add model provider → Custom model API** and fill in the Base URL, API Key, and model ID.
-3. Click **Save** to finish.
+3. Click **Create** for a new provider or **Save** when editing an existing provider.
 
 Without a configured model API Key, the Web UI can still be opened, but model requests will not work.
+
+#### Example: Connect Alibaba Cloud Bailian qwen-plus
+
+1. Open **Settings → Models → Add model provider → Custom model API**.
+2. Enter the following settings. Use an API key obtained from the Bailian console; do not put the key in conversations or public files.
+
+    | Field | Value |
+    | --- | --- |
+    | Provider ID | `bailian` |
+    | Display name | `阿里云百炼` |
+    | API address | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
+    | API protocol | `OpenAI Chat Completions` |
+    | API key | Your own Bailian API key |
+    | Model ID | `qwen-plus` |
+    | Model display name | `Qwen Plus` |
+
+3. Add the model and click **Create**. When editing an existing provider, click **Save**.
+4. After selecting a workspace, choose **Qwen Plus** in the conversation's model selector.
+
+This example uses the Bailian compatible endpoint in the Chinese mainland; use an API key for that region. For other regions or gateways, follow the provider's documented API address and protocol. Saving settings or detecting credentials does not prove that model calls work; verify with an actual conversation.
 
 ### 2. Select a Workspace
 
@@ -82,6 +117,14 @@ Without a configured model API Key, the Web UI can still be opened, but model re
 
 The service instance prepares `/opt/deepseek-harness/workspace` on the ECS as the default working directory and exposes it with the same name under the home directory so the directory picker can select it directly. DeepSeek Harness session data, credentials, storage, and attachments are stored under `/opt/deepseek-harness/dsh-home`.
 
+### 3. Start a Conversation
+
+1. Confirm that a workspace is selected and choose a configured model in the model selector.
+2. Send a task, such as: `Summarize the directory structure of the current workspace. Do not modify any files.`
+3. Wait for an actual model response to confirm successful authentication and invocation. If the request fails, check the API key, API address, protocol, model ID, and the instance's outbound connectivity.
+
+Use `/compact` in the composer when you need to compress a long conversation's context.
+
 ## Operations & Maintenance
 
 To troubleshoot the service on the ECS, connect to the instance using the instance password and run:
@@ -93,8 +136,6 @@ sudo journalctl -u deepseek-harness.service -n 100 --no-pager
 ```
 
 The service startup script is located at `/opt/deepseek-harness/bin/start-dsh-web`, and application logs are at `/opt/deepseek-harness/logs/service.log`.
-
-The Nginx site configuration is at `/etc/nginx/conf.d/deepseek-harness.conf`. The `absolute_redirect off` directive in it must be kept: without it the first redirect becomes an absolute `http://<proxy-domain>:3080/...` URL and the Web UI opened through the Secure Proxy hangs on an unreachable port.
 
 ## Important Notes
 

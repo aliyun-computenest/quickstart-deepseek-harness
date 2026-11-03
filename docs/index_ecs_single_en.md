@@ -10,6 +10,8 @@ The service itself does not have a login interface. Therefore, access is gated b
 
 The service template provisions a single-ECS deployment. The DeepSeek Harness Web UI listens on `127.0.0.1:13080` internally. Nginx listens on `0.0.0.0:3080` and reverse-proxies to the local Web UI. The ComputeNest Secure Proxy accesses port 3080 via the service instance output address.
 
+The Secure Proxy only exposes the HTTPS 8443 gateway, so Nginx disables absolute redirects (`absolute_redirect off`): the first 302 stays on the relative path `/?token=...`, and the token-to-signed-cookie exchange completes inside the proxy gateway. Port 3080 on the instance is not reachable from the internet, so always open the Web UI through the Secure Proxy URL in the console outputs.
+
 <img src="architecture_ecs_single.png" width="600" height="400" align="bottom"/>
 
 ## Billing
@@ -91,6 +93,8 @@ sudo journalctl -u deepseek-harness.service -n 100 --no-pager
 ```
 
 The service startup script is located at `/opt/deepseek-harness/bin/start-dsh-web`, and application logs are at `/opt/deepseek-harness/logs/service.log`.
+
+The Nginx site configuration is at `/etc/nginx/conf.d/deepseek-harness.conf`. The `absolute_redirect off` directive in it must be kept: without it the first redirect becomes an absolute `http://<proxy-domain>:3080/...` URL and the Web UI opened through the Secure Proxy hangs on an unreachable port.
 
 ## Important Notes
 

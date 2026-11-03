@@ -1,0 +1,360 @@
+Service:
+  RegionId: cn-hongkong
+  DeployType: ros
+  DeployMetadata:
+    ServiceInstanceNameRule:
+      Prefix: deepseek-harness
+      UseDefaultValue: false
+    # HasAuth=true: 服务有密码/token鉴权，公网IP直连，无需 WebProxy
+    # HasAuth=false: 服务无鉴权，公网IP + WebProxy代理 + 安全组仅放行 100.104.0.0/16
+    NetworkMetadata:
+      EnablePrivateVpcConnection: false
+      EnableReversePrivateVpcConnection: false
+    SupplierDeployMetadata:
+      ArtifactRelation:
+        ecs_image:
+          ArtifactId: ${Artifact.EcsImage.ArtifactId}
+          ArtifactVersion: draft
+    TemplateConfigs:
+    - Name: ECS单机版
+      Url: 'ros_templates/template.yaml'
+      ArchitectureDiagramUrl: 'resources/architecture/architecture.jpg'
+      AllowedRegions:
+      - cn-qingdao
+      - cn-beijing
+      - cn-zhangjiakou
+      - cn-huhehaote
+      - cn-hangzhou
+      - cn-shanghai
+      - cn-shenzhen
+      - cn-chengdu
+      - cn-hongkong
+      - ap-southeast-1
+      - ap-southeast-3
+      - ap-southeast-5
+      - ap-northeast-1
+      - us-west-1
+      - us-east-1
+      - eu-central-1
+      - eu-west-1
+      - me-east-1
+        # HasAuth=true: 服务有鉴权，直接展示公网URL，不使用 WebProxy
+        # HasAuth=false: 服务无鉴权，基于 PrivateIps 生成 WebProxy 安全代理（安全组仅放行 100.104.0.0/16）
+      OutputConfigs:
+      - OutputKey: WebUIAddress
+        EnableWebProxy: true
+  ServiceType: private
+  ServiceInfo:
+    # 英文版可以再配置Locale为en-US的服务信息
+  - Locale: zh-CN
+    Name: Deepseek-Harness社区版
+    ShortDescription: DeepSeek Harness 是 DeepSeek AI 开源的 Agent 
+      Harness，采用插件化架构并提供浏览器 Web UI，可在页面中配置模型、选择工作区后运行代码代理任务。
+    Image: 
+      https://service-info-public.oss-cn-hangzhou.aliyuncs.com/1853370294850618/cn-hangzhou/service_logob324ad9813e94f8792c3.png
+    Softwares: []
+Artifact:
+  EcsImage:
+    ArtifactType: EcsImage
+    ArtifactName: ecs_image_deepseek-harness
+    Description: deepseek-harness EcsImage
+    SupportRegionIds:
+    - cn-qingdao
+    - cn-beijing
+    - cn-zhangjiakou
+    - cn-huhehaote
+    - cn-hangzhou
+    - cn-shanghai
+    - cn-shenzhen
+    - cn-chengdu
+    - cn-hongkong
+    - ap-southeast-1
+    - ap-southeast-3
+    - ap-southeast-5
+    - ap-northeast-1
+    - us-west-1
+    - us-east-1
+    - eu-central-1
+    - eu-west-1
+    - me-east-1
+    ArtifactProperty:
+      RegionId: cn-hongkong
+    ArtifactBuildProperty:
+      RegionId: cn-hongkong
+      SourceImageId: "aliyun/services/computenest/images/python_311_uv_docker"
+      CommandType: RunShellScript
+      Timeout: 10800
+      CommandContent: |
+        #!/bin/bash
+        set -e
+
+        APP_DIR=/opt/deepseek-harness
+        NODE_VERSION=24.22.2
+        NODE_DIST=node-v24.22.2-linux-x64
+        NODE_ARCHIVE=${NODE_DIST}.tar.xz
+        NODE_URL=https://nodejs.org/dist/v${NODE_VERSION}/${NODE_ARCHIVE}
+        DSH_VERSION=0.2.1-rc.5
+
+        dnf -y install git curl tar xz gcc-c++ make python3 nginx
+
+        mkdir -p "${APP_DIR}/bin" "${APP_DIR}/dsh-home" "${APP_DIR}/workspace" "${APP_DIR}/logs" "${APP_DIR}/home" "${APP_DIR}/state"
+
+        if [ ! -x "/opt/${NODE_DIST}/bin/node" ]; then
+          curl -fsSL "${NODE_URL}" -o "/tmp/${NODE_ARCHIVE}"
+          tar -xJf "/tmp/${NODE_ARCHIVE}" -C /opt
+          rm -f "/tmp/${NODE_ARCHIVE}"
+        fi
+
+        ln -sf "/opt/${NODE_DIST}/bin/node" /usr/local/bin/node
+        ln -sf "/opt/${NODE_DIST}/bin/npm" /usr/local/bin/npm
+        ln -sf "/opt/${NODE_DIST}/bin/npx" /usr/local/bin/npx
+        export PATH="/opt/${NODE_DIST}/bin:${PATH}"
+
+        node --version
+        npm --version
+        npm config set fund false
+        npm install -g "@deepseek-ai/dsh@${DSH_VERSION}"
+        ln -sf "/opt/${NODE_DIST}/bin/dsh" /usr/local/bin/dsh
+        dsh --version | grep -F "${DSH_VERSION}"
+
+        cat > "${APP_DIR}/bin/start-dsh-web" <<'EOS'
+        #!/bin/bash
+        set -e
+        APP_DIR=/opt/deepseek-harness
+        NODE_DIST=node-v24.22.2-linux-x64
+        PORT=13080
+        WEB_PORT=3080
+        export PATH="/opt/${NODE_DIST}/bin:${PATH}"
+        export DSH_HOME="${APP_DIR}/dsh-home"
+        export HOME="${APP_DIR}/home"
+        mkdir -p "${DSH_HOME}" "${APP_DIR}/workspace" "${APP_DIR}/logs" "${HOME}" "${APP_DIR}/state"
+        # 工作区选择器以 HOME 为根目录且只能逐级浏览，把 workspace 链进 HOME 供直接选取
+        ln -sfn "${APP_DIR}/workspace" "${HOME}/workspace"
+        cd "${APP_DIR}/workspace"
+
+        BOOT_LOG="${APP_DIR}/logs/boot.log"
+        : > "${BOOT_LOG}"
+        /opt/${NODE_DIST}/bin/dsh web --port ${PORT} --no-open >> "${BOOT_LOG}" 2>&1 &
+        DSH_PID=$!
+        trap 'kill ${DSH_PID} >/dev/null 2>&1 || true; wait ${DSH_PID} 2>/dev/null || true; exit 0' TERM INT
+
+        TOKEN=""
+        for i in $(seq 1 180); do
+          TOKEN=$(grep -o 'token=[A-Za-z0-9_-]*' "${BOOT_LOG}" | tail -1 | cut -d= -f2)
+          if [ -n "${TOKEN}" ]; then break; fi
+          if ! kill -0 ${DSH_PID} 2>/dev/null; then break; fi
+          sleep 1
+        done
+
+        if [ -z "${TOKEN}" ]; then
+          echo "ERROR: dsh launch token was not printed at startup"
+          cat "${BOOT_LOG}"
+          exit 1
+        fi
+        printf '%s' "${TOKEN}" > "${APP_DIR}/state/launch-token"
+        chmod 600 "${APP_DIR}/state/launch-token"
+
+        # 0.2.x 起访问需要启动 token 换签名 Cookie；Nginx 在首次访问时自动补 token，
+        # Cookie 名由 authority(127.0.0.1:13080) 的 sha256 决定，固定不变。
+        COOKIE_NAME="dsh-auth-x_Vg4NegHK2Y1sa6UlPk2DseZIVLAOUN1RCCfu1U1SM"
+        cat > /etc/nginx/conf.d/deepseek-harness.conf <<EOF
+        map \$http_upgrade \$dsh_connection_upgrade {
+            default upgrade;
+            ""      close;
+        }
+
+        # nginx 不支持嵌套 if，用 map 组合出「既无 Cookie 又无 token」的条件
+        map \$http_cookie \$dsh_cookie_hit {
+            default 0;
+            "~*${COOKIE_NAME}=" 1;
+        }
+        map \$arg_token \$dsh_token_hit {
+            default 1;
+            ""      0;
+        }
+        map "\$dsh_cookie_hit:\$dsh_token_hit" \$dsh_need_token {
+            "0:0"   1;
+            default 0;
+        }
+
+        server {
+            listen 0.0.0.0:${WEB_PORT};
+            # 安全代理只对外暴露 8443，nginx 默认会把相对 Location 拼成 http://<Host>:3080/... 的绝对地址
+            absolute_redirect off;
+            server_name _;
+
+            location = / {
+                if (\$dsh_need_token) {
+                    return 302 /?token=${TOKEN};
+                }
+                proxy_intercept_errors on;
+                error_page 401 = @dsh_reauth;
+                proxy_pass http://127.0.0.1:${PORT};
+                proxy_http_version 1.1;
+                proxy_set_header Host 127.0.0.1:${PORT};
+                proxy_set_header Origin http://127.0.0.1:${PORT};
+                proxy_set_header Sec-Fetch-Site same-origin;
+                proxy_set_header X-Real-IP \$remote_addr;
+                proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto \$scheme;
+                proxy_set_header Upgrade \$http_upgrade;
+                proxy_set_header Connection \$dsh_connection_upgrade;
+                proxy_buffering off;
+                proxy_cache off;
+                proxy_read_timeout 3600s;
+                proxy_send_timeout 3600s;
+            }
+
+            location / {
+                proxy_pass http://127.0.0.1:${PORT};
+                proxy_http_version 1.1;
+                proxy_set_header Host 127.0.0.1:${PORT};
+                proxy_set_header Origin http://127.0.0.1:${PORT};
+                proxy_set_header Sec-Fetch-Site same-origin;
+                proxy_set_header X-Real-IP \$remote_addr;
+                proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto \$scheme;
+                proxy_set_header Upgrade \$http_upgrade;
+                proxy_set_header Connection \$dsh_connection_upgrade;
+                proxy_buffering off;
+                proxy_cache off;
+                proxy_read_timeout 3600s;
+                proxy_send_timeout 3600s;
+            }
+
+            location @dsh_reauth {
+                return 302 /?token=${TOKEN};
+            }
+        }
+        EOF
+
+        nginx -t
+        chmod 600 /etc/nginx/conf.d/deepseek-harness.conf
+        systemctl enable nginx.service >/dev/null 2>&1 || true
+        systemctl reload nginx.service >/dev/null 2>&1 || systemctl restart nginx.service >/dev/null 2>&1 || true
+        # 构建环境可能没有 systemd，直接拉起 nginx 兜底，直到 3080 可访问
+        for i in $(seq 1 15); do
+          curl -s -o /dev/null --max-time 2 "http://127.0.0.1:${WEB_PORT}/" && break
+          nginx >/dev/null 2>&1 || true
+          sleep 1
+        done
+
+        wait ${DSH_PID}
+        EOS
+        chmod +x "${APP_DIR}/bin/start-dsh-web"
+
+        # 插件安装底层依赖 pnpm（固定 10.x，避免 pnpm 11 拦截构建脚本）
+        npm install -g pnpm@10
+        ln -sf "/opt/${NODE_DIST}/bin/pnpm" /usr/local/bin/pnpm
+
+        echo "=== Initialize DSH web profile ==="
+        set +e
+        /opt/deepseek-harness/bin/start-dsh-web > "${APP_DIR}/logs/profile-init.log" 2>&1 &
+        INIT_PID=$!
+        for i in $(seq 1 180); do
+          [ -s "${APP_DIR}/state/launch-token" ] && break
+          sleep 1
+        done
+        TOKEN=$(cat "${APP_DIR}/state/launch-token" 2>/dev/null)
+        if [ -z "${TOKEN}" ]; then
+          echo "ERROR: dsh launch token was not printed during profile init"
+          cat "${APP_DIR}/logs/profile-init.log"
+          exit 1
+        fi
+        curl -fsS "http://127.0.0.1:13080/?token=${TOKEN}" >/dev/null
+        INIT_EXIT=$?
+        sleep 5
+        kill ${INIT_PID} >/dev/null 2>&1 || true
+        wait ${INIT_PID} >/dev/null 2>&1 || true
+        pkill -f "dsh web --port 13080" >/dev/null 2>&1 || true
+        # 等待上一轮 dsh 彻底释放 13080，否则校验实例会 EADDRINUSE
+        for i in $(seq 1 60); do
+          curl -s -o /dev/null --max-time 1 http://127.0.0.1:13080/ || break
+          sleep 1
+        done
+        set -e
+        if [ ${INIT_EXIT} -ne 0 ]; then
+          echo "ERROR: web profile initialization failed, exit code: ${INIT_EXIT}"
+          cat "${APP_DIR}/logs/profile-init.log"
+          exit 1
+        fi
+        PROFILE_DIR="${APP_DIR}/dsh-home/profiles/web"
+        if [ ! -d "${PROFILE_DIR}" ]; then
+          echo "ERROR: web profile was not initialized at ${PROFILE_DIR}"
+          cat "${APP_DIR}/logs/profile-init.log"
+          exit 1
+        fi
+
+        echo "=== Install dsh-better-sidebar plugin ==="
+        # 必须与 systemd 服务的 DSH_HOME/HOME 一致，否则插件会装到 /root/.dsh，服务不可见
+        export DSH_HOME="${APP_DIR}/dsh-home"
+        export HOME="${APP_DIR}/home"
+        # 走 npm 通道（官方推荐），不要用 github: 源码方式（需本地构建且会被 pnpm 拦截）
+        dsh plugin --profile web add dsh-better-sidebar@latest
+        grep -q 'dsh-better-sidebar' "${PROFILE_DIR}/package.json"
+        if [ ! -d "${PROFILE_DIR}/node_modules/dsh-better-sidebar" ]; then
+          echo "ERROR: dsh-better-sidebar was not installed into ${PROFILE_DIR}/node_modules"
+          exit 1
+        fi
+        # 放行构建脚本并确保 node-pty（终端能力）原生模块可用
+        cd "${PROFILE_DIR}"
+        pnpm approve-builds --all || true
+        pnpm rebuild node-pty || true
+        cd "${APP_DIR}"
+
+        echo "=== Build-time startup validation ==="
+        rm -f "${APP_DIR}/state/launch-token"
+        set +e
+        /opt/deepseek-harness/bin/start-dsh-web > "${APP_DIR}/logs/build-validation.log" 2>&1 &
+        VALIDATION_PID=$!
+        for i in $(seq 1 180); do
+          [ -s "${APP_DIR}/state/launch-token" ] && break
+          sleep 1
+        done
+        TOKEN=$(cat "${APP_DIR}/state/launch-token" 2>/dev/null)
+        if [ -z "${TOKEN}" ]; then
+          echo "ERROR: dsh launch token was not printed during build-time validation"
+          cat "${APP_DIR}/logs/build-validation.log"
+          exit 1
+        fi
+        curl -fsS "http://127.0.0.1:13080/?token=${TOKEN}" >/dev/null
+        EXIT_CODE=$?
+        # token 文件先于 nginx 配置就绪，重试等待 3080 可访问
+        COOKIE_CODE=000
+        for i in $(seq 1 30); do
+          COOKIE_CODE=$(curl -s -o /dev/null -w '%{http_code}' -c /tmp/validate-cookie -b /tmp/validate-cookie -L --max-time 10 "http://127.0.0.1:3080/")
+          [ "${COOKIE_CODE}" = "200" ] && break
+          sleep 2
+        done
+        # 模拟安全代理（Host 为网关域名、无 Cookie），302 必须是相对地址，不能被拼成 :3080
+        PROXY_LOCATION=$(curl -s -o /dev/null -D - -H "Host: aliyun-workbench.com" --max-time 10 "http://127.0.0.1:3080/" | tr -d '\r' | awk 'tolower($1)=="location:"{print $2}')
+        kill ${VALIDATION_PID} >/dev/null 2>&1 || true
+        wait ${VALIDATION_PID} >/dev/null 2>&1 || true
+        set -e
+        case "${PROXY_LOCATION}" in
+          /\?token=*) ;;
+          *)
+            echo "ERROR: nginx redirect under proxy Host is not relative: ${PROXY_LOCATION%%\?*}"
+            cat /etc/nginx/conf.d/deepseek-harness.conf
+            exit 1
+            ;;
+        esac
+        if [ ${EXIT_CODE} -ne 0 ]; then
+          echo "ERROR: Service did not respond during build-time validation, exit code: ${EXIT_CODE}"
+          cat "${APP_DIR}/logs/build-validation.log"
+          exit 1
+        fi
+        if [ "${COOKIE_CODE}" != "200" ]; then
+          echo "ERROR: Browser bootstrap through nginx returned ${COOKIE_CODE}, expected 200"
+          cat "${APP_DIR}/logs/build-validation.log"
+          cat /etc/nginx/conf.d/deepseek-harness.conf
+          exit 1
+        fi
+        if grep -qiE 'command not found|Cannot find module|SyntaxError|EADDRINUSE|error: --host 0\.0\.0\.0|fatal|panic' "${APP_DIR}/logs/build-validation.log"; then
+          echo "ERROR: Fatal startup pattern detected during build-time validation"
+          cat "${APP_DIR}/logs/build-validation.log"
+          exit 1
+        fi
+        # 清掉构建期 token，实例首次启动必须重新生成，避免旧 token 被 nginx 沿用
+        rm -f "${APP_DIR}/state/launch-token"
+        echo "=== Build-time validation passed ==="

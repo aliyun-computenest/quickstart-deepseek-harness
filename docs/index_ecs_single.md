@@ -10,6 +10,8 @@ Deepseek-Harness社区版是 DeepSeek AI 开源的 Agent Harness，提供浏览�
 
 本服务模板构建出的服务为单机 ECS 部署。DeepSeek Harness Web UI 在实例内部监听 `127.0.0.1:13080`，Nginx 监听 `0.0.0.0:3080` 并反向代理到本地 Web UI，计算巢安全代理基于服务实例输出地址访问 3080 端口。
 
+安全代理只对外暴露 HTTPS 8443 网关，因此 Nginx 已关闭绝对重定向（`absolute_redirect off`）：首次访问的 302 保持为相对路径 `/?token=...`，token 换签名 Cookie 的跳转全程留在代理网关内完成。实例的 3080 端口不可从公网直达，访问 Web UI 请始终使用控制台输出的安全代理入口。
+
 <img src="architecture_ecs_single.png" width="600" height="400" align="bottom"/>
 
 ## 计费说明
@@ -91,6 +93,8 @@ sudo journalctl -u deepseek-harness.service -n 100 --no-pager
 ```
 
 服务启动脚本位于 `/opt/deepseek-harness/bin/start-dsh-web`，应用日志位于 `/opt/deepseek-harness/logs/service.log`。
+
+Nginx 站点配置位于 `/etc/nginx/conf.d/deepseek-harness.conf`，其中的 `absolute_redirect off` 不能删除，否则安全代理打开的页面会跳向不可达的 3080 端口而卡住。
 
 ## 注意事项
 

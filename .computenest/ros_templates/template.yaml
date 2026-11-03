@@ -1,0 +1,419 @@
+ROSTemplateFormatVersion: '2015-09-01'
+Locals:
+  CurTime:
+    Type: Eval
+    Value:
+      Fn::FormatTime:
+        - '%Y%m%d-%H%M%S'
+        - Asia/Shanghai
+Conditions:
+  CreateVpcConditions:
+    Fn::Equals:
+      - NewVPC
+      - Ref: VpcOption
+Parameters:
+  VpcOption:
+    Type: String
+    AllowedValues:
+      - NewVPC
+      - ExistingVPC
+    AssociationPropertyMetadata:
+      ValueLabelMapping:
+        NewVPC:
+          zh-cn: 新建专有网络
+          en: New VPC
+        ExistingVPC:
+          zh-cn: 已有专有网络
+          en: Existing VPC
+    Label:
+      en: Select Existing or New VPC
+      zh-cn: 选择已有/新建的专有网络
+    Required: true
+    Default: NewVPC
+  VpcCidrBlock:
+    Type: String
+    Label:
+      en: VPC CIDR IPv4 Block
+      zh-cn: 专有网络IPv4网段
+    Description:
+      zh-cn: VPC的ip地址段范围，<br>您可以使用以下的ip地址段或其子网:<br><font color='green'>[10.0.0.0/8]</font><br><font color='green'>[172.16.0.0/12]</font><br><font color='green'>[192.168.0.0/16]</font>
+      en: 'The ip address range of the VPC in the CidrBlock form; <br>You can use the following ip address ranges and their subnets: <br><font color=''green''>[10.0.0.0/8]</font><br><font color=''green''>[172.16.0.0/12]</font><br><font color=''green''>[192.168.0.0/16]</font>'
+    Default: 192.168.0.0/16
+    Required:
+      Fn::Equals:
+        - NewVPC
+        - ${VpcOption}
+    AssociationProperty: ALIYUN::VPC::VPC::CidrBlock
+    AssociationPropertyMetadata:
+      Visible:
+        Condition:
+          Fn::Equals:
+            - NewVPC
+            - ${VpcOption}
+  VSwitchCidrBlock:
+    Type: String
+    Label:
+      en: VSwitch CIDR Block
+      zh-cn: 交换机子网网段
+    Description:
+      zh-cn: 必须属于VPC的子网段。
+      en: Must belong to the subnet segment of VPC.
+    Default: 192.168.1.0/24
+    Required:
+      Fn::Equals:
+        - NewVPC
+        - ${VpcOption}
+    AssociationProperty: ALIYUN::VPC::VSwitch::CidrBlock
+    AssociationPropertyMetadata:
+      VpcCidrBlock: VpcCidrBlock
+      Visible:
+        Condition:
+          Fn::Equals:
+            - NewVPC
+            - ${VpcOption}
+  PayType:
+    Type: String
+    Label:
+      en: ECS Instance Charge Type
+      zh-cn: 付费类型
+    Default: PostPaid
+    AllowedValues:
+      - PostPaid
+      - PrePaid
+    AssociationProperty: ChargeType
+    AssociationPropertyMetadata:
+      LocaleKey: InstanceChargeType
+  PayPeriodUnit:
+    Type: String
+    Label:
+      en: Pay Period Unit
+      zh-cn: 购买资源时长周期
+    Default: Month
+    AllowedValues:
+      - Month
+      - Year
+    AssociationProperty: PayPeriodUnit
+    AssociationPropertyMetadata:
+      Visible:
+        Condition:
+          Fn::Not:
+            Fn::Equals:
+              - ${PayType}
+              - PostPaid
+  PayPeriod:
+    Type: Number
+    Label:
+      en: Period
+      zh-cn: 购买资源时长
+    Default: 1
+    AllowedValues:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+    AssociationProperty: PayPeriod
+    AssociationPropertyMetadata:
+      Visible:
+        Condition:
+          Fn::Not:
+            Fn::Equals:
+              - ${PayType}
+              - PostPaid
+  EcsInstanceType:
+    Type: String
+    Label:
+      en: Instance Type
+      zh-cn: 实例类型
+    AssociationProperty: ALIYUN::ECS::Instance::InstanceType
+    AssociationPropertyMetadata:
+      InstanceChargeType: ${PayType}
+      Constraints:
+        InstanceTypeFamily:
+          - ecs.u1
+          - ecs.e
+  InstancePassword:
+    NoEcho: true
+    Type: String
+    Description:
+      en: Server login password, Length 8-30, must contain three(Capital letters, lowercase letters, numbers, ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ Special symbol in)
+      zh-cn: 服务器登录密码,长度8-30，必须包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ 中的特殊符号）
+    AllowedPattern: '^[a-zA-Z0-9-\(\)\`\~\!\@\#\$\%\^\&\*\_\-\+\=\|\{\}\[\]\:\;\<\>\,\.\?\/]*$'
+    Label:
+      en: Instance Password
+      zh-cn: 实例密码
+    ConstraintDescription:
+      en: Length 8-30, must contain three(Capital letters, lowercase letters, numbers, ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ Special symbol in)
+      zh-cn: 长度8-30，必须包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ 中的特殊符号）
+    MinLength: 8
+    MaxLength: 30
+    AssociationProperty: ALIYUN::ECS::Instance::Password
+  ZoneId:
+    Type: String
+    Label:
+      en: Zone ID
+      zh-cn: 可用区ID
+    AssociationProperty: ALIYUN::ECS::Instance::ZoneId
+    AssociationPropertyMetadata:
+      DefaultValueStrategy: random
+      InstanceChargeType: ${PayType}
+      SystemDiskCategory: cloud_essd
+      InstanceType: ${EcsInstanceType}
+  VpcId:
+    Type: String
+    Label:
+      en: VPC ID
+      zh-cn: 专有网络VPC实例ID
+    AssociationProperty: 'ALIYUN::ECS::VPC::VPCId'
+    Required:
+      Fn::Equals:
+        - ExistingVPC
+        - ${VpcOption}
+    Default: ''
+    AssociationPropertyMetadata:
+      AutoSelectFirst: true
+      Visible:
+        Condition:
+          Fn::Equals:
+            - ExistingVPC
+            - ${VpcOption}
+  VSwitchId:
+    Type: String
+    Label:
+      en: VSwitch ID
+      zh-cn: 交换机实例ID
+    Default: ''
+    AssociationProperty: 'ALIYUN::ECS::VSwitch::VSwitchId'
+    Required:
+      Fn::Equals:
+        - ExistingVPC
+        - ${VpcOption}
+    AssociationPropertyMetadata:
+      AutoSelectFirst: true
+      VpcId: ${VpcId}
+      ZoneId: ${ZoneId}
+      Visible:
+        Condition:
+          Fn::Equals:
+            - ExistingVPC
+            - ${VpcOption}
+Resources:
+  # 新建vpc
+  EcsVpc:
+    Type: ALIYUN::ECS::VPC
+    Condition: CreateVpcConditions
+    Properties:
+      VpcName:
+        Ref: ALIYUN::StackName
+      CidrBlock:
+        Ref: VpcCidrBlock
+  # 新建vswitch
+  EcsVSwitch:
+    Condition: CreateVpcConditions
+    Type: ALIYUN::ECS::VSwitch
+    Properties:
+      VSwitchName:
+        Ref: ALIYUN::StackName
+      VpcId:
+        Ref: EcsVpc
+      ZoneId:
+        Ref: ZoneId
+      CidrBlock:
+        Ref: VSwitchCidrBlock
+  SecurityGroup:
+    Type: ALIYUN::ECS::SecurityGroup
+    Properties:
+      SecurityGroupName:
+        Ref: ALIYUN::StackName
+      VpcId:
+        Fn::If:
+          - CreateVpcConditions
+          - Ref: EcsVpc
+          - Ref: VpcId
+      SecurityGroupIngress:
+        - PortRange: 3080/3080
+          Priority: 1
+          SourceCidrIp: 100.104.0.0/16
+          IpProtocol: tcp
+          NicType: internet
+  InstanceGroup:
+    Type: ALIYUN::ECS::InstanceGroup
+    Properties:
+      # 付费类型
+      InstanceChargeType:
+        Ref: PayType
+      PeriodUnit:
+        Ref: PayPeriodUnit
+      Period:
+        Ref: PayPeriod
+      VpcId:
+        Fn::If:
+          - CreateVpcConditions
+          - Ref: EcsVpc
+          - Ref: VpcId
+      VSwitchId:
+        'Fn::If':
+          - CreateVpcConditions
+          - Ref: EcsVSwitch
+          - Ref: VSwitchId
+      ZoneId:
+        Ref: ZoneId
+      SecurityGroupId:
+        Ref: SecurityGroup
+      ImageId: ecs_image
+      Password:
+        Ref: InstancePassword
+      InstanceType:
+        Ref: EcsInstanceType
+      SystemDiskCategory: cloud_essd
+      SystemDiskSize: 200
+      # HasAuth=true: 服务有密码/token鉴权，公网IP直连，安全组开放 0.0.0.0/0
+      # HasAuth=false: 服务无鉴权，公网IP + WebProxy代理，安全组仅放行 100.104.0.0/16（WebProxy出口段）
+      InternetMaxBandwidthOut: 5
+      IoOptimized: optimized
+      MaxAmount: 1
+  RunInstallCommand:
+    Type: ALIYUN::ECS::RunCommand
+    Properties:
+      InstanceIds:
+        Fn::GetAtt:
+        - InstanceGroup
+        - InstanceIds
+      Type: RunShellScript
+      Sync: true
+      Timeout: 3600
+      CommandContent:
+        Fn::Sub:
+          - |
+            #!/bin/bash
+            set -e
+
+            APP_DIR=/opt/deepseek-harness
+            mkdir -p "${!APP_DIR}/dsh-home" "${!APP_DIR}/workspace" "${!APP_DIR}/logs" "${!APP_DIR}/home" "${!APP_DIR}/state"
+            # 工作区选择器以 HOME 为根目录且只能逐级浏览，把 workspace 链进 HOME 供直接选取
+            ln -sfn "${!APP_DIR}/workspace" "${!APP_DIR}/home/workspace"
+
+            # 镜像构建阶段留下的 launch-token 与 nginx 配置已过期，避免用旧 token 抢占启动
+            rm -f "${!APP_DIR}/state/launch-token" /etc/nginx/conf.d/deepseek-harness.conf
+
+            cat > /etc/systemd/system/deepseek-harness.service <<'EOF'
+            [Unit]
+            Description=DeepSeek Harness Web UI
+            After=network-online.target
+            Wants=network-online.target
+
+            [Service]
+            Type=simple
+            ExecStart=/opt/deepseek-harness/bin/start-dsh-web
+            Restart=always
+            RestartSec=5
+            WorkingDirectory=/opt/deepseek-harness/workspace
+            StandardOutput=append:/opt/deepseek-harness/logs/service.log
+            StandardError=append:/opt/deepseek-harness/logs/service.log
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+
+            systemctl daemon-reload
+            systemctl enable --now nginx.service
+            systemctl enable --now deepseek-harness.service
+
+            # 0.2.x 起访问依赖启动 token 换签名 Cookie，等守护脚本产出新 token 后再校验
+            for i in $(seq 1 180); do
+              [ -s "${!APP_DIR}/state/launch-token" ] && break
+              sleep 1
+            done
+            if [ ! -s "${!APP_DIR}/state/launch-token" ]; then
+              echo "ERROR: dsh launch token was not generated on first boot"
+              tail -n 200 "${!APP_DIR}/logs/boot.log" || true
+              exit 1
+            fi
+            systemctl is-active --quiet deepseek-harness.service
+            systemctl is-active --quiet nginx.service
+
+            # 浏览器首次访问由 nginx 自动补 token 并下发 Cookie，跟随跳转应拿到 200
+            # token 文件先于 nginx 配置就绪，这里重试等待 3080 真正可访问
+            WEB_CODE=000
+            for i in $(seq 1 60); do
+              WEB_CODE=$(curl -s -o /dev/null -w '%{http_code}' -c /tmp/verify-cookie -b /tmp/verify-cookie -L --max-time 10 http://127.0.0.1:3080/)
+              [ "${!WEB_CODE}" = "200" ] && break
+              sleep 2
+            done
+            if [ "${!WEB_CODE}" != "200" ]; then
+              echo "ERROR: Web UI bootstrap returned ${!WEB_CODE}, expected 200"
+              cat /etc/nginx/conf.d/deepseek-harness.conf
+              exit 1
+            fi
+
+            # 0.2.x 的接口统一走 /api/remote.mux（WebSocket），握手 101 才说明 nginx 与鉴权 Cookie 都生效
+            MUX_CODE=$(curl -s -o /dev/null -w '%{http_code}' -b /tmp/verify-cookie --max-time 15 \
+              -H 'Connection: Upgrade' -H 'Upgrade: websocket' \
+              -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+              http://127.0.0.1:3080/api/remote.mux)
+            if [ "${!MUX_CODE}" != "101" ]; then
+              echo "ERROR: /api/remote.mux handshake returned ${!MUX_CODE}, expected 101"
+              exit 1
+            fi
+            echo "web bootstrap ok, remote.mux handshake=101"
+
+          - RegionId:
+              Ref: ALIYUN::Region
+            CurTime:
+              Ref: CurTime
+Outputs:
+  WebUIAddress:
+    Description:
+      en: deepseek_harness URL (port 3080).
+      zh-cn: deepseek_harness 访问地址（端口 3080）。
+    Value:
+      Fn::Sub:
+        - http://${InstanceAddress}:3080
+        - InstanceAddress:
+            Fn::Select:
+              - 0
+              - Fn::GetAtt:
+                  - InstanceGroup
+                  - PrivateIps
+  QuickStartGuide:
+    Description:
+      zh-cn: 使用说明
+      en: 使用说明
+    Value: "部署完成后通过 Outputs 中的安全代理访问地址打开 Web UI，先在 Settings Models 配置模型 API Key，再选择工作区开始使用。"
+  ModelConfigurationGuide:
+    Description:
+      zh-cn: 模型配置提示
+      en: 模型配置提示
+    Value: "首次进入页面后需在 Settings Models 中填写 DeepSeek API Key 或自定义 OpenAI 兼容模型提供方，否则无法发起模型请求。"
+  WorkspaceGuide:
+    Description:
+      zh-cn: 工作区配置提示
+      en: 工作区配置提示
+    Value: "Web UI 打开后需点击 Choose workspace 选择工作区目录，未选择前会话输入框不可用。"
+Metadata:
+  ALIYUN::ROS::Interface:
+    ParameterGroups:
+      - Parameters:
+          - PayType
+          - PayPeriodUnit
+          - PayPeriod
+        Label:
+          default: 付费类型配置
+      - Parameters:
+          - EcsInstanceType
+          - InstancePassword
+        Label:
+          default: 资源配置
+      - Parameters:
+          - ZoneId
+          - VpcOption
+          - VpcId
+          - VSwitchId
+          - VpcCidrBlock
+          - VSwitchCidrBlock
+        Label:
+          default: 可用区配置

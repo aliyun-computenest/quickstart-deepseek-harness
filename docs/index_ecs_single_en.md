@@ -2,13 +2,9 @@
 
 ## Service Overview
 
-DeepSeek-Harness Community Edition is an Agent Harness open-sourced by DeepSeek AI. It provides a browser-based Web UI where users can configure DeepSeek or OpenAI-compatible models, select a workspace, and run code agent tasks. This ComputeNest service uses a single-ECS deployment, and the ECS image already ships with Node.js 24.22.2, the DeepSeek Harness (0.2.1-rc.5) Web UI, and an Nginx reverse proxy.
+DeepSeek-Harness Community Edition is an Agent Harness open-sourced by DeepSeek AI. It provides a browser-based Web UI where users can configure DeepSeek or OpenAI-compatible models, select a workspace, and run code agent tasks.
 
-Open the Web UI through the Secure Proxy entry on the service instance details page in the ComputeNest console. Do not access the private output address directly or expose port 3080 to the public internet.
-
-## Version Updates
-
-The deployed version is **DeepSeek Harness 0.2.1-rc.5**. Compared with the previous 0.1.0-rc.6 version, the main feature and usability changes are:
+The current version is **DeepSeek Harness 0.2.1-rc.5**. Compared with the previous 0.1.0-rc.6 version, the main feature and usability changes are:
 
 | Feature | Updates |
 | --- | --- |
@@ -22,32 +18,6 @@ The deployed version is **DeepSeek Harness 0.2.1-rc.5**. Compared with the previ
 The Git Worktrees plugin lets the agent create and enter an independent Git checkout. Reasoning translation supports Bing, Google, or paid DeepSeek Flash. Developer Tools provides raw session logs and debugging tools. Experimental features may change between versions; read the corresponding plugin documentation before use.
 
 See the [0.2.1-rc.1 cumulative release notes](https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.2.1-rc.1) and [0.2.1-rc.5 release notes](https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.2.1-rc.5) for details.
-
-## Service Architecture
-
-The service template provisions a single-ECS deployment. The DeepSeek Harness Web UI listens on `127.0.0.1:13080` internally. Nginx listens on `0.0.0.0:3080` and reverse-proxies to the local Web UI. The ComputeNest Secure Proxy accesses port 3080 via the service instance output address.
-
-<img src="architecture_ecs_single.png" width="600" height="400" align="bottom"/>
-
-## Billing
-
-Building a service from this template incurs no charges. When deploying a service instance, resource costs mainly include:
-
-- ECS instance type
-- System disk capacity
-
-Both pay-as-you-go and subscription billing methods are supported. Estimated costs are displayed in real time before deployment.
-
-## Required Permissions for RAM Users
-
-If you use a RAM user to create a service instance, you must grant the required permissions to the RAM user before creating the instance.
-
-| Policy Name | Description |
-| --- | --- |
-| AliyunECSFullAccess | Full access to Elastic Compute Service (ECS) |
-| AliyunVPCFullAccess | Full access to Virtual Private Cloud (VPC) |
-| AliyunROSFullAccess | Full access to Resource Orchestration Service (ROS) |
-| AliyunComputeNestUserFullAccess | Full access to ComputeNest user-side resources |
 
 ## Service Instance Deployment Workflow
 

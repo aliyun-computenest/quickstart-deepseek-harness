@@ -2,13 +2,9 @@
 
 ## 服务说明
 
-Deepseek-Harness社区版是 DeepSeek AI 开源的 Agent Harness，提供浏览器 Web UI，可在页面中配置 DeepSeek 或 OpenAI 兼容模型，并选择工作区后运行代码代理任务。本计算巢服务采用单机 ECS 部署，ECS 镜像内已预置 Node.js 24.22.2、DeepSeek Harness（0.2.1-rc.5）Web UI 和 Nginx 反向代理。
+Deepseek-Harness社区版是 DeepSeek AI 开源的 Agent Harness，提供浏览器 Web UI，可在页面中配置 DeepSeek 或 OpenAI 兼容模型，并选择工作区后运行代码代理任务。
 
-请通过计算巢控制台服务实例详情页中的安全代理入口访问 Web UI，不要直接访问输出中的私网地址或对公网开放 3080 端口。
-
-## 版本更新
-
-当前部署版本为 **DeepSeek Harness 0.2.1-rc.5**。相较于此前的 0.1.0-rc.6，主要功能与使用体验变化如下：
+当前版本为 **DeepSeek Harness 0.2.1-rc.5**。相较于此前的 0.1.0-rc.6，主要功能与使用体验变化如下：
 
 | 功能 | 更新内容 |
 | --- | --- |
@@ -22,32 +18,6 @@ Deepseek-Harness社区版是 DeepSeek AI 开源的 Agent Harness，提供浏览�
 Git Worktrees 插件可让 Agent 创建并进入独立的 Git checkout；思考过程翻译可选择 Bing、Google 或付费 DeepSeek Flash；开发者工具提供会话原始日志和调试入口。实验性功能可能随版本调整，使用前请查看对应插件说明。
 
 详细变更见 [0.2.1-rc.1 累积更新说明](https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.2.1-rc.1)与 [0.2.1-rc.5 发布说明](https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.2.1-rc.5)。
-
-## 服务架构
-
-本服务模板构建出的服务为单机 ECS 部署。DeepSeek Harness Web UI 在实例内部监听 `127.0.0.1:13080`，Nginx 监听 `0.0.0.0:3080` 并反向代理到本地 Web UI，计算巢安全代理基于服务实例输出地址访问 3080 端口。
-
-<img src="architecture_ecs_single.png" width="600" height="400" align="bottom"/>
-
-## 计费说明
-
-通过此服务模板构建服务不产生费用。用户部署服务实例时，资源费用主要涉及：
-
-- ECS 实例规格
-- 系统盘容量
-
-计费方式支持按量付费和包年包月，预估费用会在部署前实时展示。
-
-## RAM账号所需权限
-
-若使用 RAM 用户创建服务实例，需要在创建服务实例前为该 RAM 用户添加相应权限。
-
-| 权限策略名称 | 备注 |
-| --- | --- |
-| AliyunECSFullAccess | 管理云服务器 ECS 的权限 |
-| AliyunVPCFullAccess | 管理专有网络 VPC 的权限 |
-| AliyunROSFullAccess | 管理资源编排 ROS 的权限 |
-| AliyunComputeNestUserFullAccess | 管理计算巢服务用户侧资源的权限 |
 
 ## 服务实例部署流程
 
